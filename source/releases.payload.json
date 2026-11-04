@@ -1,0 +1,30 @@
+{
+ "products": {
+  "calibre-wallet": {
+   "min_version": null,
+   "channels": {
+    "stable": {
+     "version": "0.7.0",
+     "required": false,
+     "reason": null,
+     "notes_url": "https://github.com/BitCore77-Calibre/calibre-updates/blob/main/notes/calibre-wallet-0.7.0.md",
+     "files": [],
+     "rollout": {"start": "2026-11-05T00:00:00Z", "stages": [[0, 100]], "paused": false}
+    }
+   }
+  },
+  "mbm-dex-web": {
+   "min_version": null,
+   "channels": {
+    "stable": {
+     "version": "0.16.0",
+     "required": false,
+     "reason": null,
+     "notes_url": "https://github.com/BitCore77-Calibre/calibre-updates/blob/main/notes/mbm-dex-web-0.16.0.md",
+     "files": [],
+     "rollout": {"start": "2026-11-05T00:00:00Z", "stages": [[0, 100]], "paused": false}
+    }
+   }
+  }
+ }
+}
