@@ -1,0 +1,6 @@
+# The signing library for publish-signed.sh, locked to exact files (pip --require-hashes).
+# Hashes taken on the owner's main computer, 4 Nov 2026 (Python 3.12.3, Linux x86_64).
+# Another computer or Python needs its own wheels added here after review. CLX has no value.
+cffi==2.1.1 --hash=sha256:c1453022f490d2459a11819d83ad1d586e9ff65a12ac3e705ffebd46d3685dcf
+cryptography==50.0.1 --hash=sha256:51afcfceb15597cf2635068e4ac9a56b2abde622edde17f37d85fd7b5306497a
+pycparser==3.12 --hash=sha256:a076f3f489b39b43ed13563a1dafe42447445bec2e294154ec5c57fcdda4c85e
