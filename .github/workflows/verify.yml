@@ -1,0 +1,39 @@
+name: Verify signed files
+
+# The check every CALIBRE app runs, on every pull request and on main: releases.json must carry a
+# valid, unexpired signature (ML-DSA-65 + Ed25519) from the built-in key, and the signing tool's
+# conformance vectors must pass. A release list that does not verify turns the pull request red.
+#
+# Runs on GitHub's computers on purpose: this repository is public, and a public repository must not
+# use a self-hosted runner (anyone can open a pull request). Read-only, no secrets. Guardian's
+# scheduled scans check main as well (calibre-guardian #161, #162). Test networks only; CLX has no value.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04          # Python 3.12, matching the wheel hashes in tools/signing-requirements.txt
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Signing library, exactly as pinned (pip --require-hashes)
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/python" -m pip install --quiet --require-hashes -r tools/signing-requirements.txt
+      - name: releases.json verifies against the built-in key
+        run: |
+          "$RUNNER_TEMP/venv/bin/python" -I tools/signed_files.py verify --keys keys/calibre-signing-keys.json \
+            --kind release-list --id releases releases.json > /dev/null
+          echo "releases.json: valid signature, not expired"
+      - name: Conformance vectors of the signing tool
+        run: |
+          "$RUNNER_TEMP/venv/bin/python" -I tools/signed_files.py vectors "$RUNNER_TEMP/vectors"
