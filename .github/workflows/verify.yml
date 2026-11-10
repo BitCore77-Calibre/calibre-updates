@@ -54,6 +54,16 @@ jobs:
           else:
               print(f"releases.json serial {mine['serial']} replaces main's serial {main['serial']}")
           PY
+      - name: The timestamp workflow's pinned tools match the files (security audit APP-02, 10 Nov 2026)
+        run: |
+          # timestamp.yml copies only files whose SHA-256 matches its pins; a stale pin stops every timestamp and,
+          # after 7 days, every update offer. The same pins are checked here so a pull request that changes a pinned
+          # file without its pin turns red.
+          set -euo pipefail
+          awk 'f{print} /sha256sum -c --strict/{exit} /printf .%s  %s.n. .$/{f=1}' .github/workflows/timestamp.yml \
+            | sed -E 's/^ *([0-9a-f]{64}) ([^ ]+).*/\1  \2/' | grep -E '^[0-9a-f]{64}  ' > "$RUNNER_TEMP/pins"
+          test "$(wc -l < "$RUNNER_TEMP/pins")" -ge 4
+          sha256sum -c --strict "$RUNNER_TEMP/pins"
       - name: Conformance vectors of the signing tool
         run: |
           "$RUNNER_TEMP/venv/bin/python" -I tools/signed_files.py vectors "$RUNNER_TEMP/vectors"
