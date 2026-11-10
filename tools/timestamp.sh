@@ -34,6 +34,30 @@ if gh release view timestamp >/dev/null 2>&1; then
 else
   PREV=(--first)
 fi
+# Never vouch for an OLDER release list than the previous timestamp did (calibre-guardian #207, 10 Nov 2026): an
+# older list is still validly signed until it expires (history/releases/1.json until 18 Nov 2026), and stopping
+# exactly that "old or frozen list" trick is why the timestamp exists. The same serial must be the same list.
+if [ -f "$d/prev/timestamp.json" ]; then
+  python3 -I - "$d" <<'PY'
+import json, sys
+from pathlib import Path
+d = Path(sys.argv[1])
+now = json.loads((d / "stamp.json").read_text())
+try:
+    before = json.loads(json.loads((d / "prev" / "timestamp.json").read_text())["body"])["payload"]
+    serial, digest = int(before["releases_serial"]), str(before["releases_sha256"])
+except (KeyError, TypeError, ValueError) as exc:
+    raise SystemExit(f"STOP: the previous timestamp.json cannot be read ({exc}); nothing re-signed")
+if now["releases_serial"] < serial:
+    raise SystemExit(f"STOP: releases.json on main is serial {now['releases_serial']}, OLDER than serial {serial} "
+                     "named by the previous timestamp. An old list reached main: nothing re-signed. Put the newest "
+                     "list back on main (through a pull request).")
+if now["releases_serial"] == serial and now["releases_sha256"] != digest:
+    raise SystemExit(f"STOP: releases.json on main is serial {serial} but not the list the previous timestamp named; "
+                     "nothing re-signed.")
+print(f"release list serial {now['releases_serial']} (previous timestamp: {serial}): not older")
+PY
+fi
 python3 -I "$TOOL" sign --key-dir "$d" --kind timestamp --id releases-timestamp "${PREV[@]}" "$d/stamp.json" "$d/timestamp.json"
 python3 -I "$TOOL" fresh --keys keys/calibre-signing-keys.json releases.json "$d/timestamp.json"
 if gh release view timestamp >/dev/null 2>&1; then

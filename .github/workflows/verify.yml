@@ -34,6 +34,26 @@ jobs:
           "$RUNNER_TEMP/venv/bin/python" -I tools/signed_files.py verify --keys keys/calibre-signing-keys.json \
             --kind release-list --id releases releases.json > /dev/null
           echo "releases.json: valid signature, not expired"
+      - name: A pull request never brings back an older release list
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          # A validly signed but older list (history/releases/N.json) passes the signature check above; once on main
+          # it would be timestamped again (calibre-guardian #207). So the list must be the same as main's or newer.
+          git fetch --quiet --depth=1 origin "refs/heads/$BASE"
+          git show FETCH_HEAD:releases.json > "$RUNNER_TEMP/main-releases.json"
+          python3 -I - "$RUNNER_TEMP/main-releases.json" releases.json <<'PY'
+          import json, sys
+          main, mine = (json.loads(json.loads(open(f).read())["body"]) for f in sys.argv[1:3])
+          if mine == main:
+              print(f"releases.json unchanged (serial {main['serial']})")
+          elif mine["serial"] <= main["serial"]:
+              raise SystemExit(f"releases.json is serial {mine['serial']}, not newer than main's serial {main['serial']}: "
+                               "an older or same-serial release list must never replace the one on main.")
+          else:
+              print(f"releases.json serial {mine['serial']} replaces main's serial {main['serial']}")
+          PY
       - name: Conformance vectors of the signing tool
         run: |
           "$RUNNER_TEMP/venv/bin/python" -I tools/signed_files.py vectors "$RUNNER_TEMP/vectors"
