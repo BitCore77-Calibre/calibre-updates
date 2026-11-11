@@ -24,6 +24,9 @@ concurrency:
 
 jobs:
   stamp:
+    # Only main's code ever reaches the signing secrets: "Run workflow" on another branch does nothing
+    # (audit UPD-3, 10 Nov 2026: a branch with an old timestamp.sh and an old releases.json could be dispatched).
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -44,7 +47,7 @@ jobs:
           cd "$R"
           printf '%s  %s\n' \
             2be3e45692362800f99531a548c93cdcd72a9adf85f004981b9d88d10c8a1066 tools/signed_files.py \
-            8cc3d804952b75e607f829a4a8940987f50b2abccffe7a85ac23a383b0938dcc tools/timestamp.sh \
+            fb5da3acc3bb3988da19658003e655a977028b19af4027fd9d1d1f2deee2f704 tools/timestamp.sh \
             8a2810d266ea4d8102b40e6e62efb07ae545b2a5ea1af89372b1cbf970044d11 tools/signing-requirements.txt \
             94618504a344c1ad902cae8d7b6639afac0d78ea10f01aded5b1b0c42af2f440 keys/calibre-signing-keys.json | sha256sum -c --strict
       - uses: actions/setup-python@v5
